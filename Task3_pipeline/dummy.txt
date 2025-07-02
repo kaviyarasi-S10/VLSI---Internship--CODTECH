@@ -1,0 +1,104 @@
+Task 3 – 4-Stage Pipelined Processor
+Objective: Design a simplified 4-stage pipelined processor that supports basic instructions such as ADD, SUB, and a dummy LOAD.
+This is a simplified demonstration to show pipeline stages (Fetch, Decode, Execute, Memory/Writeback).
+
+Pipelined Processor Verilog Code (pipelined_processor.v)
+// Simplified 4-stage pipelined processor for demonstration
+module pipelined_processor (
+    input clk,
+    input reset,
+    output reg [7:0] result  // Final output from the pipeline
+);
+
+// For simplicity, using a basic instruction word that is 16 bits wide.
+// In a real design, you would define a proper instruction format.
+
+reg [15:0] instruction_mem [0:7]; // Small instruction memory (8 instructions)
+reg [7:0] register_file [0:7];      // A small register file
+
+// Pipeline registers for the four stages
+reg [15:0] IF_ID;
+reg [15:0] ID_EX;
+reg [15:0] EX_MEM;
+reg [15:0] MEM_WB;
+
+integer i;
+
+// Stage 1: Instruction Fetch
+always @(posedge clk or posedge reset) begin
+    if (reset) begin
+         IF_ID <= 16'h0000;
+         // Initialize instruction memory with some dummy instructions
+         // Format: [15:8] operand1, [7:0] operand2.
+         instruction_mem[0] <= {8'd10, 8'd20}; // Example: will be processed as ADD if 10 < 20
+         instruction_mem[1] <= {8'd30, 8'd15}; // Example: will be processed as SUB if 30 > 15
+         instruction_mem[2] <= {8'd50, 8'd25};
+         instruction_mem[3] <= {8'd5,  8'd3};
+         for (i = 4; i < 8; i = i + 1)
+             instruction_mem[i] <= 16'h0000;
+    end
+    else begin
+         // For demonstration, always fetch the first instruction from instruction memory
+         IF_ID <= instruction_mem[0];
+    end
+end
+
+// Stage 2: Instruction Decode
+always @(posedge clk) begin
+    if (!reset)
+         ID_EX <= IF_ID;  // Pass instruction to next stage
+end
+
+// Stage 3: Execute
+always @(posedge clk) begin
+    if (!reset) begin
+        // For demo purposes: if operand1 < operand2, perform addition; else subtraction.
+        if (ID_EX[15:8] < ID_EX[7:0])
+            EX_MEM <= {8'd0, ID_EX[15:8] + ID_EX[7:0]};
+        else
+            EX_MEM <= {8'd0, ID_EX[15:8] - ID_EX[7:0]};
+    end
+end
+
+// Stage 4: Memory & Writeback (merged for simplicity)
+always @(posedge clk) begin
+    if (!reset) begin
+         MEM_WB <= EX_MEM;
+         // Write back: store the result in register_file[0] and output it.
+         register_file[0] <= MEM_WB[7:0];
+         result <= MEM_WB[7:0];
+    end
+end
+
+endmodule
+Pipelined Processor Testbench (pipelined_processor_tb.v)
+module pipelined_processor_tb;
+  reg clk;
+  reg reset;
+  wire [7:0] result;
+
+  pipelined_processor uut (
+      .clk(clk),
+      .reset(reset),
+      .result(result)
+  );
+
+  // Generate clock: 10 time units period
+  initial begin
+      clk = 0;
+      forever #5 clk = ~clk;
+  end
+
+  initial begin
+      reset = 1;
+      #10;
+      reset = 0;
+      #100;
+      $finish;
+  end
+
+  initial begin
+      $monitor("Time %t: result = %d", $time, result);
+  end
+
+endmodule
