@@ -1,0 +1,74 @@
+Task 2 – Synchronous RAM Module
+Objective: Develop a simple synchronous RAM module with read and write operations.
+
+Synchronous RAM Verilog Code (simple_ram.v)
+// Parameterized synchronous RAM module with write enable
+module simple_ram #(
+    parameter DATA_WIDTH = 8,
+    parameter ADDR_WIDTH = 4
+)
+(
+    input                       clk,
+    input                       we,    // Write Enable
+    input      [ADDR_WIDTH-1:0] addr,  // Address
+    input      [DATA_WIDTH-1:0] d_in,  // Data Input
+    output reg [DATA_WIDTH-1:0] d_out  // Data Output
+);
+
+  // Memory depth: 2^ADDR_WIDTH
+  reg [DATA_WIDTH-1:0] mem [(2**ADDR_WIDTH)-1:0];
+
+  always @(posedge clk) begin
+    if (we)
+      mem[addr] <= d_in;  // Write operation
+    d_out <= mem[addr];   // Read operation (synchronous read)
+  end
+
+endmodule
+
+RAM Testbench (simple_ram_tb.v)
+module simple_ram_tb;
+  reg clk;
+  reg we;
+  reg [3:0] addr;
+  reg [7:0] d_in;
+  wire [7:0] d_out;
+
+  // Instantiate the RAM module with default parameters (8-bit data, 4-bit address)
+  simple_ram #(8, 4) uut (
+    .clk(clk),
+    .we(we),
+    .addr(addr),
+    .d_in(d_in),
+    .d_out(d_out)
+  );
+
+  // Clock generation: period = 10 time units
+  initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+  end
+
+  initial begin
+    $monitor("Time %t: we=%b, addr=%h, d_in=%h, d_out=%h", $time, we, addr, d_in, d_out);
+    
+    // Initialize
+    we = 0;
+    addr = 0;
+    d_in = 0;
+    #10;
+    
+    // Write data to memory locations
+    we = 1;
+    addr = 4'h1; d_in = 8'hAA; #10;  // Write 0xAA to address 1
+    addr = 4'h2; d_in = 8'h55; #10;  // Write 0x55 to address 2
+    
+    // Turn off write and perform read operations
+    we = 0;
+    #10;
+    addr = 4'h1; #10;
+    addr = 4'h2; #10;
+    $finish;
+  end
+
+endmodule
