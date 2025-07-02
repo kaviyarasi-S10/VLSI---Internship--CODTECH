@@ -1,0 +1,53 @@
+Task 1 – ALU Design
+Objective: Design a basic Arithmetic Logic Unit (ALU) supporting addition, subtraction, AND, OR, and NOT (applied to operand A).
+
+ALU Verilog Code (alu.v)
+// Simple 4-bit ALU supporting ADD, SUB, AND, OR, NOT (only A inverted)
+module ALU (
+    input  [3:0] A,      // 4-bit input A
+    input  [3:0] B,      // 4-bit input B
+    input  [2:0] ALU_Sel, // 3-bit control signal to select operation
+    output reg [3:0] ALU_Out // 4-bit output
+);
+
+always @(*) begin
+    case (ALU_Sel)
+        3'b000: ALU_Out = A + B;    // Addition
+        3'b001: ALU_Out = A - B;    // Subtraction
+        3'b010: ALU_Out = A & B;    // Bitwise AND
+        3'b011: ALU_Out = A | B;    // Bitwise OR
+        3'b100: ALU_Out = ~A;       // Bitwise NOT on A
+        default: ALU_Out = 4'b0000;  // Default case
+    endcase
+end
+endmodule
+
+ALU Testbench (alu_tb.v)
+module ALU_tb;
+
+reg [3:0] A, B;
+reg [2:0] ALU_Sel;
+wire [3:0] ALU_Out;
+
+// Instantiate the ALU module
+ALU uut (
+    .A(A),
+    .B(B),
+    .ALU_Sel(ALU_Sel),
+    .ALU_Out(ALU_Out)
+);
+
+initial begin
+    $monitor("At time %0t: A=%b, B=%b, Sel=%b => Out=%b", $time, A, B, ALU_Sel, ALU_Out);
+    
+    // Test vector assignments
+    A = 4'b0101; B = 4'b0011;
+    
+    ALU_Sel = 3'b000; #10; // Test addition (5+3)
+    ALU_Sel = 3'b001; #10; // Test subtraction (5-3)
+    ALU_Sel = 3'b010; #10; // Test bitwise AND
+    ALU_Sel = 3'b011; #10; // Test bitwise OR
+    ALU_Sel = 3'b100; #10; // Test bitwise NOT on A
+    $finish;
+end
+endmodule
